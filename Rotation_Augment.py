@@ -83,14 +83,15 @@ if __name__ == "__main__":
                     y = float(elements[2]) * img_max_height
                     width = float(elements[3]) * img_max_width
                     height = float(elements[4]) * img_max_height
+                    width_half, height_half = width / 2, height / 2
                     point1 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x - width / 2, y - height / 2)), degree)
+                        mid_point, (x - width_half, y - height_half)), degree)
                     point2 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x + width / 2, y - height / 2)), degree)
+                        mid_point, (x + width_half, y - height_half)), degree)
                     point3 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x - width / 2, y + height / 2)), degree)
+                        mid_point, (x - width_half, y + height_half)), degree)
                     point4 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x + width / 2, y + height / 2)), degree)
+                        mid_point, (x + width_half, y + height_half)), degree)
                     obj_mid_point = rotate_point(mid_point, get_diff_origin(
                         mid_point, (x, y)), degree)
                     x_points = [point1[0], point2[0], point3[0], point4[0]]
