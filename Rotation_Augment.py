@@ -39,12 +39,12 @@ if __name__ == "__main__":
 
     # Code to show image with bounding box
 
-    # img = Image.open("path/to/img(.bmp|.jpg|any img fmt)").rotate(degree_interval)
+    # img = Image.open("path/to/image")
     # img_max_width = img.width
     # img_max_height = img.height
     # mid_point = (img_max_width / 2, img_max_height / 2)
     # draw = ImageDraw.Draw(img)
-    # with open("path/to/lbl.txt", "r") as f:
+    # with open("path/to/label", "r") as f:
     #     annotations = f.readlines()
     #     for annotation in annotations:
     #         elements = annotation.split(" ")
@@ -100,7 +100,7 @@ if __name__ == "__main__":
                     right = np.max(x_points)
                     top = np.min(y_points)
                     bottom = np.max(y_points)
-                    content += f"{class_} {obj_mid_point[0] / img_max_width} {obj_mid_point[1] / img_max_height} {(right - left) / img_max_width} {(bottom - top) / img_max_height}"
+                    content += f"{class_} {obj_mid_point[0] / img_max_width} {obj_mid_point[1] / img_max_height} {(right - left) / img_max_width} {(bottom - top) / img_max_height}\n"
                 with open(f"{os.path.join(labels_path, os.path.splitext(image)[0])}_{degree}.txt", "w") as f:
                     f.write(content)
                 img.save(f"{os.path.join(images_path, os.path.splitext(image)[0])}_{degree}.jpg")
