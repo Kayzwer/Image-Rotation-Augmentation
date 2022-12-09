@@ -31,11 +31,13 @@ if __name__ == "__main__":
     parser.add_argument("--images_path")
     parser.add_argument("--labels_path")
     parser.add_argument("--degree_interval")
+    parser.add_argument("--inner_offset")
     args = parser.parse_args()
 
     images_path = args.images_path
     labels_path = args.labels_path
     degree_interval = int(args.degree_interval)
+    inner_offset = float(args.inner_offset)
 
     # Code to show image with bounding box
 
@@ -72,6 +74,8 @@ if __name__ == "__main__":
             img_max_width = img.width
             img_max_height = img.height
             mid_point = (img_max_width / 2, img_max_height / 2)
+            inner_offset = inner_offset if (degree != 90 and degree != 180 and
+                                            degree != 270) else 0.0
             filename = f"{os.path.join(labels_path, os.path.splitext(image)[0])}.txt"
             with open(filename, "r") as f:
                 annotations = f.readlines()
@@ -96,10 +100,10 @@ if __name__ == "__main__":
                         mid_point, (x, y)), degree)
                     x_points = [point1[0], point2[0], point3[0], point4[0]]
                     y_points = [point1[1], point2[1], point3[1], point4[1]]
-                    left = np.min(x_points)
-                    right = np.max(x_points)
-                    top = np.min(y_points)
-                    bottom = np.max(y_points)
+                    left = np.min(x_points) + inner_offset
+                    right = np.max(x_points) - inner_offset
+                    top = np.min(y_points) + inner_offset
+                    bottom = np.max(y_points) - inner_offset
                     content += f"{class_} {obj_mid_point[0] / img_max_width} {obj_mid_point[1] / img_max_height} {(right - left) / img_max_width} {(bottom - top) / img_max_height}\n"
                 with open(f"{os.path.join(labels_path, os.path.splitext(image)[0])}_{degree}.txt", "w") as f:
                     f.write(content)
