@@ -20,6 +20,9 @@ def rotate_point(mid_point: Tuple[float, float], input: Tuple[float, float],
     new_np_vector = rotation_matrix @ np_input
     return (new_np_vector[0][0] + mid_point[0], mid_point[1] - new_np_vector[1][0])
 
+def clamp(x: float) -> float:
+    return min(1.0, max(0.0, x))
+
 def draw_point(draw, point: Tuple[float, float], radius: float) -> None:
     draw.ellipse((point[0] - radius, point[1] - radius,
                   point[0] + radius, point[1] + radius), fill="red")
@@ -104,7 +107,7 @@ if __name__ == "__main__":
                     right = np.max(x_points) - inner_offset
                     top = np.min(y_points) + inner_offset
                     bottom = np.max(y_points) - inner_offset
-                    content += f"{class_} {obj_mid_point[0] / img_max_width} {obj_mid_point[1] / img_max_height} {(right - left) / img_max_width} {(bottom - top) / img_max_height}\n"
+                    content += f"{class_} {clamp(obj_mid_point[0] / img_max_width)} {clamp(obj_mid_point[1] / img_max_height)} {clamp((right - left) / img_max_width)} {clamp((bottom - top) / img_max_height)}\n"
                 with open(f"{os.path.join(labels_path, os.path.splitext(image)[0])}_{degree}.txt", "w") as f:
                     f.write(content)
                 img.save(f"{os.path.join(images_path, os.path.splitext(image)[0])}_{degree}.jpg")
