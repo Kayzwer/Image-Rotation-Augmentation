@@ -1,5 +1,6 @@
+from multiprocessing import Process
 from PIL import Image, ImageDraw
-from typing import Tuple
+from typing import Tuple, List
 import numpy as np
 import argparse
 import os
@@ -27,51 +28,9 @@ def draw_point(draw, point: Tuple[float, float], radius: float) -> None:
     draw.ellipse((point[0] - radius, point[1] - radius,
                   point[0] + radius, point[1] + radius), fill="red")
 
-
-if __name__ == "__main__":
-    # Parameters
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--images_path")
-    parser.add_argument("--labels_path")
-    parser.add_argument("--degree_interval")
-    parser.add_argument("--inner_offset")
-    args = parser.parse_args()
-
-    images_path = args.images_path
-    labels_path = args.labels_path
-    degree_interval = int(args.degree_interval)
-    inner_offset = float(args.inner_offset)
-
-    # Code to show image with bounding box
-
-    # img = Image.open("path/to/image")
-    # img_max_width = img.width
-    # img_max_height = img.height
-    # mid_point = (img_max_width / 2, img_max_height / 2)
-    # draw = ImageDraw.Draw(img)
-    # with open("path/to/label", "r") as f:
-    #     annotations = f.readlines()
-    #     for annotation in annotations:
-    #         elements = annotation.split(" ")
-    #         class_ = elements[0]
-    #         x = float(elements[1]) * img_max_width
-    #         y = float(elements[2]) * img_max_height
-    #         width = float(elements[3]) * img_max_width
-    #         height = float(elements[4]) * img_max_height
-    #         point1 = (x - width / 2, y - height / 2)
-    #         point2 = (x + width / 2, y - height / 2)
-    #         point3 = (x - width / 2, y + height / 2)
-    #         point4 = (x + width / 2, y + height / 2)
-    #         draw_point(draw, point1, 9)
-    #         draw_point(draw, point2, 9)
-    #         draw_point(draw, point3, 9)
-    #         draw_point(draw, point4, 9)
-    #         draw.rectangle((*point1, *point4), outline="red")
-    #     img.show()
-
-    # Code to generate new images and labels
-
-    for image in os.listdir(images_path):
+def main_thread(images_list: List[str], images_path: str, labels_path: str,
+                degree_interval: int, inner_offset: int) -> None:
+    for image in images_list:
         for degree in range(degree_interval, 360, degree_interval):
             img = Image.open(os.path.join(images_path, image)).rotate(degree)
             img_max_width = img.width
@@ -111,3 +70,60 @@ if __name__ == "__main__":
                 with open(f"{os.path.join(labels_path, os.path.splitext(image)[0])}_{degree}.txt", "w") as f:
                     f.write(content)
                 img.save(f"{os.path.join(images_path, os.path.splitext(image)[0])}_{degree}.jpg")
+
+
+
+if __name__ == "__main__":
+    # Parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--images_path")
+    parser.add_argument("--labels_path")
+    parser.add_argument("--degree_interval")
+    parser.add_argument("--inner_offset")
+    args = parser.parse_args()
+
+    images_path = args.images_path
+    labels_path = args.labels_path
+    degree_interval = int(args.degree_interval)
+    inner_offset = float(args.inner_offset)
+
+    images_list = os.listdir(images_path)
+    n = len(images_list)
+    middle = n // 2
+    list_a = images_list[:middle]
+    list_b = images_list[middle:]
+
+    proc1 = Process(target=main_thread, args=(list_a, images_path, labels_path,
+                                              degree_interval, inner_offset))
+    proc2 = Process(target=main_thread, args=(list_b, images_path, labels_path,
+                                              degree_interval, inner_offset))
+    proc1.start()
+    proc2.start()
+    proc1.join()
+    proc2.join()
+    # Code to show image with bounding box
+
+    # img = Image.open("path/to/image")
+    # img_max_width = img.width
+    # img_max_height = img.height
+    # mid_point = (img_max_width / 2, img_max_height / 2)
+    # draw = ImageDraw.Draw(img)
+    # with open("path/to/label", "r") as f:
+    #     annotations = f.readlines()
+    #     for annotation in annotations:
+    #         elements = annotation.split(" ")
+    #         class_ = elements[0]
+    #         x = float(elements[1]) * img_max_width
+    #         y = float(elements[2]) * img_max_height
+    #         width = float(elements[3]) * img_max_width
+    #         height = float(elements[4]) * img_max_height
+    #         point1 = (x - width / 2, y - height / 2)
+    #         point2 = (x + width / 2, y - height / 2)
+    #         point3 = (x - width / 2, y + height / 2)
+    #         point4 = (x + width / 2, y + height / 2)
+    #         draw_point(draw, point1, 9)
+    #         draw_point(draw, point2, 9)
+    #         draw_point(draw, point3, 9)
+    #         draw_point(draw, point4, 9)
+    #         draw.rectangle((*point1, *point4), outline="red")
+    #     img.show()
