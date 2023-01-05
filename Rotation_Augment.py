@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, cpu_count
 from PIL import Image, ImageDraw
 from typing import Tuple, List
 import numpy as np
@@ -85,22 +85,32 @@ if __name__ == "__main__":
     images_path = args.images_path
     labels_path = args.labels_path
     degree_interval = int(args.degree_interval)
-    inner_offset = float(args.inner_offset)
+    inner_offset = int(args.inner_offset)
 
     images_list = os.listdir(images_path)
+    n_cpu = cpu_count()
     n = len(images_list)
-    middle = n // 2
-    list_a = images_list[:middle]
-    list_b = images_list[middle:]
 
-    proc1 = Process(target=main_thread, args=(list_a, images_path, labels_path,
-                                              degree_interval, inner_offset))
-    proc2 = Process(target=main_thread, args=(list_b, images_path, labels_path,
-                                              degree_interval, inner_offset))
-    proc1.start()
-    proc2.start()
-    proc1.join()
-    proc2.join()
+    if n < n_cpu:
+        main_thread(images_list, images_path, labels_path, degree_interval, inner_offset)
+    else:
+        batches = []
+        procs = []
+        sub_n = n // n_cpu
+        i = 0
+        while (i + sub_n) < n:
+            batches.append(images_list[i:i+sub_n])
+            i += sub_n
+        if i != n:
+            batches.append(images_list[i:])
+
+        for batch in batches:
+            proc = Process(target=main_thread, args=(batch, images_path, labels_path,
+                                                     degree_interval, inner_offset))
+            proc.start()
+            procs.append(proc)
+        for proc in procs:
+            proc.join()
     # Code to show image with bounding box
 
     # img = Image.open("path/to/image")
