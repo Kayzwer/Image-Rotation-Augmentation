@@ -5,11 +5,6 @@ import numpy as np
 import argparse
 import os
 
-def get_diff_origin(mid_point: Tuple[float, float], input: Tuple[float, float]
-                    ) -> Tuple[float, float]:
-    new_x = input[0] - mid_point[0]
-    new_y = -input[1] + mid_point[1]
-    return (new_x, new_y)
 
 def rotate_point(mid_point: Tuple[float, float], input: Tuple[float, float],
                  degree: float) -> Tuple[float, float]:
@@ -21,23 +16,28 @@ def rotate_point(mid_point: Tuple[float, float], input: Tuple[float, float],
     new_np_vector = rotation_matrix @ np_input
     return (new_np_vector[0][0] + mid_point[0], mid_point[1] - new_np_vector[1][0])
 
+
+def get_diff_origin(mid_point: Tuple[float, float], input: Tuple[float, float]
+                    ) -> Tuple[float, float]:
+    new_x = input[0] - mid_point[0]
+    new_y = -input[1] + mid_point[1]
+    return (new_x, new_y)
+
+
 def clamp(x: float) -> float:
     return min(1.0, max(0.0, x))
 
-def draw_point(draw, point: Tuple[float, float], radius: float) -> None:
-    draw.ellipse((point[0] - radius, point[1] - radius,
-                  point[0] + radius, point[1] + radius), fill="red")
 
 def main_thread(images_list: List[str], images_path: str, labels_path: str,
                 degree_interval: int, inner_offset: int) -> None:
     for image in images_list:
         for degree in range(degree_interval, 360, degree_interval):
             img = Image.open(os.path.join(images_path, image)).rotate(degree)
+            inner_offset = inner_offset if (degree != 90 and degree != 180 and
+                                            degree != 270) else 0
             img_max_width = img.width
             img_max_height = img.height
             mid_point = (img_max_width / 2, img_max_height / 2)
-            inner_offset = inner_offset if (degree != 90 and degree != 180 and
-                                            degree != 270) else 0
             filename = f"{os.path.join(labels_path, os.path.splitext(image)[0])}.txt"
             with open(filename, "r") as f:
                 annotations = f.readlines()
@@ -45,28 +45,15 @@ def main_thread(images_list: List[str], images_path: str, labels_path: str,
                 for annotation in annotations:
                     elements = annotation.split(" ")
                     class_ = elements[0]
-                    x = float(elements[1]) * img_max_width
-                    y = float(elements[2]) * img_max_height
-                    width = float(elements[3]) * img_max_width
-                    height = float(elements[4]) * img_max_height
-                    width_half, height_half = width / 2, height / 2
-                    point1 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x - width_half, y - height_half)), degree)
-                    point2 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x + width_half, y - height_half)), degree)
-                    point3 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x - width_half, y + height_half)), degree)
-                    point4 = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x + width_half, y + height_half)), degree)
-                    obj_mid_point = rotate_point(mid_point, get_diff_origin(
-                        mid_point, (x, y)), degree)
-                    x_points = [point1[0], point2[0], point3[0], point4[0]]
-                    y_points = [point1[1], point2[1], point3[1], point4[1]]
-                    left = np.min(x_points) + inner_offset
-                    right = np.max(x_points) - inner_offset
-                    top = np.min(y_points) + inner_offset
-                    bottom = np.max(y_points) - inner_offset
-                    content += f"{class_} {clamp(obj_mid_point[0] / img_max_width)} {clamp(obj_mid_point[1] / img_max_height)} {clamp((right - left) / img_max_width)} {clamp((bottom - top) / img_max_height)}\n"
+                    points = list(map(float, elements[1:]))
+                    content += f"{class_} "
+                    for i in range(0, len(points), 2):
+                        x = points[i] * img_max_width
+                        y = points[i + 1] * img_max_height
+                        new_point = rotate_point(mid_point, get_diff_origin(mid_point, (x, y)), degree)
+                        content += f"{clamp(new_point[0] / img_max_width)} {clamp(new_point[1] / img_max_height)} "
+                    content += "\n"
+                content.strip()
                 with open(f"{os.path.join(labels_path, os.path.splitext(image)[0])}_{degree}.txt", "w") as f:
                     f.write(content)
                 img.save(f"{os.path.join(images_path, os.path.splitext(image)[0])}_{degree}.jpg")
